@@ -84,7 +84,11 @@ const NodeHandles = ({ handles = [], side }) => {
           type={handle.type}
           position={getPosition(handle.position)}
           id={handle.id}
-          style={handleStyle}
+          style={{ ...handleStyle, zIndex: 20, pointerEvents: 'all' }}
+          isConnectable={handle.isConnectable !== false}
+          onMouseDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
         />
       </Fragment>
     );

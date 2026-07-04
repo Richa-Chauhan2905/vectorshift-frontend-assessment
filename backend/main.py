@@ -232,10 +232,10 @@ def parse_pipeline(payload: PipelinePayload):
             has_invalid_edge = True
             continue
 
-        source_node_type = get_node_type(nodes_by_id[edge.source])
-        target_node_type = get_node_type(nodes_by_id[edge.target])
-        source_handle_error = validate_handle(edge.source, source_node_type, edge.sourceHandle, "source")
-        target_handle_error = validate_handle(edge.target, target_node_type, edge.targetHandle, "target")
+        source_node = nodes_by_id[edge.source]
+        target_node = nodes_by_id[edge.target]
+        source_handle_error = validate_handle(source_node, edge.sourceHandle, "source")
+        target_handle_error = validate_handle(target_node, edge.targetHandle, "target")
 
         if source_handle_error:
             errors.append(source_handle_error)
