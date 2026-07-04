@@ -1,35 +1,49 @@
-// textNode.js
+import { useMemo, useState } from 'react';
+import { BaseNode, NodeField, NodeTextInput } from './baseNode';
+import { useStore } from '../store';
 
-import { useState } from 'react';
-import { Handle, Position } from 'reactflow';
+const getVariableNames = (text) => {
+  const variableNames = [];
+  const variablePattern = /\{\{\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\}\}/g;
+  let match;
+
+  while ((match = variablePattern.exec(text || '')) !== null) {
+    if (!variableNames.includes(match[1])) {
+      variableNames.push(match[1]);
+    }
+  }
+
+  return variableNames;
+};
 
 export const TextNode = ({ id, data }) => {
-  const [currText, setCurrText] = useState(data?.text || '{{input}}');
+  const updateNodeField = useStore((state) => state.updateNodeField);
+  const [currText, setCurrText] = useState(data?.text ?? '{{input}}');
 
-  const handleTextChange = (e) => {
-    setCurrText(e.target.value);
+  const handleTextChange = (value) => {
+    setCurrText(value);
+    updateNodeField(id, 'text', value);
   };
 
+  const variableNames = useMemo(() => getVariableNames(currText), [currText]);
+  const handles = useMemo(() => [
+    {
+      type: 'source',
+      position: 'right',
+      id: `${id}-output`,
+    },
+    ...variableNames.map((variableName) => ({
+      type: 'target',
+      position: 'left',
+      id: `${id}-${variableName}`,
+    })),
+  ], [id, variableNames]);
+
   return (
-    <div style={{width: 200, height: 80, border: '1px solid black'}}>
-      <div>
-        <span>Text</span>
-      </div>
-      <div>
-        <label>
-          Text:
-          <input 
-            type="text" 
-            value={currText} 
-            onChange={handleTextChange} 
-          />
-        </label>
-      </div>
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={`${id}-output`}
-      />
-    </div>
+    <BaseNode id={id} title="Text" handles={handles}>
+      <NodeField label="Text">
+        <NodeTextInput value={currText} onChange={handleTextChange} />
+      </NodeField>
+    </BaseNode>
   );
-}
+};
