@@ -18,7 +18,7 @@ const getVariableNames = (text) => {
 
 export const TextNode = ({ id, data }) => {
   const updateNodeField = useStore((state) => state.updateNodeField);
-  const [currText, setCurrText] = useState(data?.text ?? '{{input}}');
+  const [currText, setCurrText] = useState(data?.text ?? '');
 
   const handleTextChange = (value) => {
     setCurrText(value);
@@ -36,6 +36,7 @@ export const TextNode = ({ id, data }) => {
       type: 'target',
       position: 'left',
       id: `${id}-${variableName}`,
+      label: variableName,
     })),
   ], [id, variableNames]);
 

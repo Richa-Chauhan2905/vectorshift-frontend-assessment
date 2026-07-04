@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, List, Optional, Set
 
 from fastapi import FastAPI
@@ -69,24 +70,46 @@ def get_handle_suffix(node_id: str, handle_id: Optional[str]) -> Optional[str]:
     return handle_id[len(prefix) :]
 
 
+def get_variable_names(text: str) -> List[str]:
+    pattern = r"\{\{\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\}\}"
+    return list(set(re.findall(pattern, text or "")))
+
+
+def get_allowed_handles(node: PipelineNode, direction: str) -> Set[str]:
+    node_type = get_node_type(node)
+    if not node_type or node_type not in NODE_HANDLE_SCHEMA:
+        return set()
+
+    if node_type == "text":
+        if direction == "source":
+            return {"output"}
+        else: # target
+            text_val = ""
+            if node.data:
+                text_val = node.data.get("text", "")
+            return set(get_variable_names(text_val))
+
+    return NODE_HANDLE_SCHEMA[node_type][direction]
+
+
 def validate_handle(
-    node_id: str,
-    node_type: Optional[str],
+    node: PipelineNode,
     handle_id: Optional[str],
     direction: str,
 ) -> Optional[str]:
+    node_type = get_node_type(node)
     if node_type not in NODE_HANDLE_SCHEMA:
         return None
 
-    handle_suffix = get_handle_suffix(node_id, handle_id)
-    allowed_handles = NODE_HANDLE_SCHEMA[node_type][direction]
+    handle_suffix = get_handle_suffix(node.id, handle_id)
+    allowed_handles = get_allowed_handles(node, direction)
 
     if handle_suffix not in allowed_handles:
-        allowed_labels = ", ".join(sorted(f"{node_id}-{handle}" for handle in allowed_handles))
+        allowed_labels = ", ".join(sorted(f"{node.id}-{handle}" for handle in allowed_handles))
         if not allowed_labels:
             allowed_labels = "none"
         return (
-            f"Node '{node_id}' does not have {direction} handle '{handle_id}'. "
+            f"Node '{node.id}' does not have {direction} handle '{handle_id}'. "
             f"Allowed {direction} handles: {allowed_labels}."
         )
 

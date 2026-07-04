@@ -47,6 +47,20 @@ code {
   font-weight: 700;
 }
 
+.base-node__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0;
+}
+
 .base-node__description {
   margin: 0;
   font-size: 12px;
