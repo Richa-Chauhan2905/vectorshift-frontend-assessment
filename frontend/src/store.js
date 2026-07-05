@@ -9,6 +9,23 @@ import {
     MarkerType,
   } from 'reactflow';
 
+const getNodeIds = (nodes = []) => new Set(
+  nodes
+    .map((node) => node?.id)
+    .filter(Boolean)
+);
+
+const sanitizeEdges = (nodes = [], edges = []) => {
+  const nodeIds = getNodeIds(nodes);
+
+  return edges.filter((edge) => {
+    const hasSource = Boolean(edge?.source);
+    const hasTarget = Boolean(edge?.target);
+
+    return hasSource && hasTarget && nodeIds.has(edge.source) && nodeIds.has(edge.target);
+  });
+};
+
 export const useStore = create(
   persist(
     (set, get) => ({
@@ -30,18 +47,30 @@ export const useStore = create(
           });
       },
       onNodesChange: (changes) => {
+        const nextNodes = applyNodeChanges(changes, get().nodes);
         set({
-          nodes: applyNodeChanges(changes, get().nodes),
+          nodes: nextNodes,
+          edges: sanitizeEdges(nextNodes, get().edges),
         });
       },
       onEdgesChange: (changes) => {
+        const nextEdges = applyEdgeChanges(changes, get().edges);
         set({
-          edges: applyEdgeChanges(changes, get().edges),
+          edges: sanitizeEdges(get().nodes, nextEdges),
         });
       },
       onConnect: (connection) => {
+        if (!connection?.source || !connection?.target) {
+          return;
+        }
+
+        const nodeIds = getNodeIds(get().nodes);
+        if (!nodeIds.has(connection.source) || !nodeIds.has(connection.target)) {
+          return;
+        }
+
         set({
-          edges: addEdge({...connection, type: 'smoothstep', animated: true, markerEnd: {type: MarkerType.Arrow, height: '20px', width: '20px'}}, get().edges),
+          edges: addEdge({...connection, type: 'smoothstep', animated: true, markerEnd: {type: MarkerType.Arrow, height: '20px', width: '20px'}}, sanitizeEdges(get().nodes, get().edges)),
         });
       },
       deleteEdge: (edgeId) => {

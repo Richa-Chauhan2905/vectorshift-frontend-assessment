@@ -27,19 +27,28 @@ export const SubmitButton = () => {
     setResult(null);
 
     try {
+      const nodeIds = new Set((nodes || []).map((node) => node?.id).filter(Boolean));
+      const validEdges = (edges || []).filter((edge) => {
+        const hasSource = Boolean(edge?.source);
+        const hasTarget = Boolean(edge?.target);
+
+        return hasSource && hasTarget && nodeIds.has(edge.source) && nodeIds.has(edge.target);
+      });
+
       const response = await fetch('http://localhost:8000/pipelines/parse', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ nodes, edges }),
+        body: JSON.stringify({ nodes, edges: validEdges }),
       });
 
+      const data = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error(`Backend returned ${response.status}`);
+        throw new Error(data?.detail || data?.error || `Backend returned ${response.status}`);
       }
 
-      const data = await response.json();
       setResult(data);
     } catch (requestError) {
       setError(
